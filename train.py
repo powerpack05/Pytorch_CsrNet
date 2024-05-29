@@ -141,7 +141,6 @@ def train(train_list, model, criterion, optimizer, epoch):
                                      std=[0.229, 0.224, 0.225]),
                    ]), 
                        train=True, 
-                       seen=model.seen,
                        batch_size=args.batch_size,
                        num_workers=args.workers),
         batch_size=args.batch_size)
