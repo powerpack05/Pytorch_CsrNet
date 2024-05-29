@@ -19,6 +19,12 @@ import cv2
 import dataset
 import time
 
+
+
+def parse_gpu_ids(gpu_id_str):
+    return [int(gpu_id) for gpu_id in gpu_id_str.split(',')]
+
+
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
 parser.add_argument('train_json', metavar='TRAIN',
@@ -29,7 +35,7 @@ parser.add_argument('test_json', metavar='TEST',
 parser.add_argument('--pre', '-p', metavar='PRETRAINED', default=None,type=str,
                     help='path to the pretrained model')
 
-parser.add_argument('gpu',metavar='GPU', type=str,
+parser.add_argument('gpu',metavar='GPU', type=parse_gpu_ids,
                     help='GPU id to use.')
 
 parser.add_argument('task',metavar='TASK', type=str,
@@ -59,15 +65,29 @@ def main():
         train_list = json.load(outfile)
     with open(args.test_json, 'r') as outfile:       
         val_list = json.load(outfile)
+
+    gpu_ids = args.gpu
+    print(f'Using GPUs: {gpu_ids}')
     
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    
+    # Set the environment variable 
+    os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, gpu_ids))
+    
+    # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.cuda.manual_seed(args.seed)
-    
+
+    if torch.cuda.is_available():
+        print(f'Using GPUs: {gpu_ids}')  
+        
+    # device is set to the first GPU
+    device = torch.device(f'cuda:{gpu_ids[0]}')
     model = CSRNet()
-    
-    model = model.cuda()
-    
-    criterion = nn.MSELoss(size_average=False).cuda()
+
+    if len(gpu_ids) > 1:
+         model = torch.nn.DataParallel(model, device_ids=gpu_ids)
+     # Move the model to the first GPU
+    model.to(f'cuda:{gpu_ids[0]}') 
+    criterion = nn.MSELoss(size_average=False).to(f'cuda:{gpu_ids[0]}')
     
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
