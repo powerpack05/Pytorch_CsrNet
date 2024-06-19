@@ -54,7 +54,7 @@ def main():
     args.momentum      = 0.95
     args.decay         = 5*1e-4
     args.start_epoch   = 0
-    args.epochs = 400
+    args.epochs = 50
     args.steps         = [-1,1,100,150]
     args.scales        = [1,1,1,1]
     args.workers = 4
